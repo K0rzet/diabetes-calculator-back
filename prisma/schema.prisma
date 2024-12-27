@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = []
+}
+
+model User {
+  id                      Int           @id @default(autoincrement())
+  email                   String        @unique
+  password                String
+  name                    String
+  targetSugarLevel        Float         @default(5.5)
+  insulinSensitivityFactor Float        @default(2.0)
+  carbRatio               Float         @default(10.0)
+  insulinCalculations     InsulinCalculation[]
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  meals                   Meal[]
+  measurements            SugarMeasurement[]
+  foodTemplates           FoodTemplate[]
+}
+
+model InsulinCalculation {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  currentSugarLevel Float
+  targetSugarLevel  Float
+  carbAmount        Float
+  correctionDose    Float
+  mealDose         Float
+  totalDose        Float
+  notes            String?
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id])
+}
+
+model Meal {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  name        String
+  dateTime    DateTime  @default(now())
+  totalCarbs  Float
+  notes       String?
+  mealItems   MealItem[]
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model FoodTemplate {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  name        String
+  carbsPer100g Float
+  defaultWeight Float   @default(100)
+  user        User      @relation(fields: [userId], references: [id])
+  mealItems   MealItem[]
+}
+
+model MealItem {
+  id              Int           @id @default(autoincrement())
+  mealId          Int
+  foodTemplateId  Int
+  weight          Float
+  carbAmount      Float
+  meal            Meal          @relation(fields: [mealId], references: [id])
+  foodTemplate    FoodTemplate  @relation(fields: [foodTemplateId], references: [id])
+}
+
+model SugarMeasurement {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  sugarLevel  Float
+  datetime    DateTime @default(now())
+  status      String   // До еды/После еды/На ночь/Натощак
+  notes       String?
+  mood        String?  // Самочувствие
+  insulin     Float?   // Введенный инсулин
+  user        User     @relation(fields: [userId], references: [id])
+}
